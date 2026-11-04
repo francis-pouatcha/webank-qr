@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeBank SWAP — QR Experiment Hub</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --heading: #f0f6fc;
+      --primary: #238636;
+      --accent: #58a6ff;
+      --danger: #f85149;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.6;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    header {
+      text-align: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+    h1 { color: var(--heading); font-size: 26px; margin-bottom: 8px; }
+    p.subtitle { color: #8b949e; font-size: 15px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card h2 { color: var(--heading); font-size: 18px; margin-bottom: 8px; }
+    .card p { color: #8b949e; font-size: 14px; margin-bottom: 16px; flex-grow: 1; }
+    .btn {
+      display: inline-block;
+      text-align: center;
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .btn.secondary { background: #21262d; border: 1px solid var(--border); color: var(--text); }
+    .btn:hover { opacity: 0.9; }
+    .section-title {
+      color: var(--heading);
+      font-size: 20px;
+      margin: 28px 0 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .qr-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .qr-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .qr-card img {
+      max-width: 100%;
+      height: auto;
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .qr-card h3 { font-size: 15px; color: var(--heading); margin-bottom: 4px; }
+    .qr-card .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 11px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    .badge.transfer { background: #f85149; color: white; }
+    .badge.identity { background: #238636; color: white; }
+    .badge.recipient { background: #1f6feb; color: white; }
+    .meta { font-size: 12px; color: #8b949e; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>WeBank SWAP — QR Experiment Hub</h1>
+      <p class="subtitle">Interactive test bench for real-device camera scanning and verification</p>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div>
+          <h2>📱 Mobile Scanner App</h2>
+          <p>Open this on your mobile phone to scan QR codes on another screen using your phone's camera, or upload QR image files directly.</p>
+        </div>
+        <a class="btn" href="samples/scanner.html">Open Camera Scanner</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <h2>📖 SWAP Concept Document</h2>
+          <p>Read the rendered specification, cryptographic parameters, byte layouts, and connectivity flows.</p>
+        </div>
+        <a class="btn secondary" href="CONCEPT.html">Read Concept Document</a>
+      </div>
+    </div>
+
+    <h2 class="section-title">Test QR Codes (Ready to Scan on Screen)</h2>
+    <div class="qr-gallery">
+      <div class="qr-card">
+        <span class="badge transfer">TRANSFER QR</span>
+        <h3>Alice &rarr; Bob (5,000 XAF)</h3>
+        <img src="samples/transfer_alice_to_bob.png" alt="Transfer QR Alice to Bob">
+        <div class="meta">Size: 79 bytes (QR V8 ECC-H)</div>
+      </div>
+
+      <div class="qr-card">
+        <span class="badge identity">IDENTITY QR</span>
+        <h3>Alice's Identity Certificate</h3>
+        <img src="samples/identity_alice.png" alt="Identity QR Alice">
+        <div class="meta">Size: 108 bytes (QR V8 ECC-Q)</div>
+      </div>
+
+      <div class="qr-card">
+        <span class="badge recipient">RECIPIENT QR</span>
+        <h3>Bob Bakery (Recipient)</h3>
+        <img src="samples/recipient_bob.png" alt="Recipient QR Bob">
+        <div class="meta">Size: 104 bytes (QR V8 ECC-Q)</div>
+      </div>
+
+      <div class="qr-card">
+        <span class="badge transfer">TRANSFER QR</span>
+        <h3>Bob &rarr; Alice (2,500 XAF)</h3>
+        <img src="samples/transfer_bob_to_alice.png" alt="Transfer QR Bob to Alice">
+        <div class="meta">Size: 79 bytes (QR V8 ECC-H)</div>
+      </div>
+
+      <div class="qr-card">
+        <span class="badge identity">IDENTITY QR</span>
+        <h3>Bob's Identity Certificate</h3>
+        <img src="samples/identity_bob.png" alt="Identity QR Bob">
+        <div class="meta">Size: 108 bytes (QR V8 ECC-Q)</div>
+      </div>
+
+      <div class="qr-card">
+        <span class="badge recipient">RECIPIENT QR</span>
+        <h3>Alice (Recipient)</h3>
+        <img src="samples/recipient_alice.png" alt="Recipient QR Alice">
+        <div class="meta">Size: 104 bytes (QR V8 ECC-Q)</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
