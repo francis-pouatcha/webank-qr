@@ -1,0 +1,15 @@
+SWAP Sample: Transfer (Payment)
+==================================================
+
+sender_id           : 2002 (Bob)
+recipient_id        : 1001 (Alice)
+amount              : 1200 FCFA
+timestamp           : 1793802909 (UTC)
+sig_type            : 0x02 (secp256r1)
+key_hint            : 0xecdd
+signature           : 64-byte fake ECDSA signature
+
+──────────────────────────────────────────────────
+Total bytes: 82
+Hex dump:
+000007d2000003e90004b06aeb429d02ecdd5fadd5e6f4e42f7a161458b97a8ab87d115087a6dc6ea3fb15c635573bf73add5fadd5e6f4e42f7a161458b97a8ab87d115087a6dc6ea3fb15c635573bf73add

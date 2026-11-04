@@ -1,0 +1,15 @@
+SWAP Sample: Identity QR
+==================================================
+
+member_id           : 1001 (Alice)
+public_key          : Ed25519 (32 bytes, 0x00 padded to 33)
+max_amount          : 50000 FCFA
+valid_to            : 1796394909 (UTC)
+sig_type            : 0x01 (Ed25519)
+key_hint            : 0x558e (MFI Root)
+signature           : 64-byte fake Root signature
+
+──────────────────────────────────────────────────
+Total bytes: 111
+Hex dump:
+000003e900452d4893dac22a886c4ad728c15bab5fe88e1af6427b57c8dd9f6b5b89bc2a3a00c3506b12cf9d01558e3f12a601130b8d02539ee1c6d8d230dff4189be0d669305aeda6acbb7e44cdff3f12a601130b8d02539ee1c6d8d230dff4189be0d669305aeda6acbb7e44cdff

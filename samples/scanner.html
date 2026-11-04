@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SWAP QR Scanner</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, sans-serif; background: #111; color: #eee; min-height: 100vh; }
+header { background: #1a1a2e; padding: 12px 16px; text-align: center; }
+header h1 { font-size: 18px; color: #e94560; }
+header p { font-size: 12px; color: #888; margin-top: 4px; }
+
+#scanner-section { position: relative; width: 100%; max-width: 500px; margin: 0 auto; }
+video { width: 100%; display: block; background: #000; border-radius: 8px; }
+canvas#decode { display: none; }
+
+#controls { text-align: center; padding: 12px; }
+button { background: #e94560; color: #fff; border: none; padding: 12px 24px; border-radius: 8px;
+  font-size: 16px; cursor: pointer; margin: 4px; }
+button:disabled { background: #555; }
+button.stop { background: #444; }
+button.upload { background: #0f3460; }
+
+input[type=file] { display: none; }
+
+#result { max-width: 500px; margin: 0 auto; padding: 16px; }
+#result:empty { display: none; }
+.card { background: #1a1a2e; border-radius: 12px; padding: 16px; margin-bottom: 12px;
+  border-left: 4px solid #e94560; }
+.card.transfer { border-left-color: #e94560; }
+.card.recipient { border-left-color: #0f3460; }
+.card.identity { border-left-color: #16c79a; }
+.card.unknown { border-left-color: #888; }
+.card h2 { font-size: 16px; margin-bottom: 12px; }
+.card.transfer h2 { color: #e94560; }
+.card.recipient h2 { color: #0f3460; }
+.card.identity h2 { color: #16c79a; }
+.card.unknown h2 { color: #888; }
+.card .field { display: flex; justify-content: space-between; padding: 6px 0;
+  border-bottom: 1px solid #2a2a3e; font-size: 14px; }
+.card .field:last-child { border-bottom: none; }
+.card .field .label { color: #888; min-width: 40%; }
+.card .field .value { color: #eee; font-family: monospace; text-align: right; max-width: 60%; word-break: break-all; }
+.card .hex { margin-top: 12px; padding: 8px; background: #0d0d1a; border-radius: 6px;
+  font-family: monospace; font-size: 11px; word-break: break-all; color: #888; }
+.status { text-align: center; padding: 8px; font-size: 13px; color: #888; }
+.error { color: #ff6b6b; text-align: center; padding: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SWAP QR Scanner</h1>
+  <p>Scan Transfer, Recipient, or Identity QR codes</p>
+</header>
+
+<div id="scanner-section">
+  <video id="video" playsinline></video>
+</div>
+<canvas id="decode"></canvas>
+
+<div id="controls">
+  <button id="startBtn" onclick="startScanner()">Start Camera</button>
+  <button id="stopBtn" class="stop" onclick="stopScanner()" disabled>Stop</button>
+  <button class="upload" onclick="document.getElementById('fileInput').click()">Upload QR Image</button>
+  <input type="file" id="fileInput" accept="image/*" onchange="handleFileUpload(event)">
+</div>
+
+<div id="status" class="status"></div>
+<div id="result"></div>
+
+<!-- jsQR library for reliable binary QR decoding -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+<script>
+const SIG_TYPES = { 0x01: 'Ed25519', 0x02: 'secp256r1', 0x03: 'secp256k1' };
+
+const video = document.getElementById('video');
+const decodeCanvas = document.getElementById('decode');
+const ctx = decodeCanvas.getContext('2d', { willReadFrequently: true });
+const resultDiv = document.getElementById('result');
+const statusDiv = document.getElementById('status');
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+
+let stream = null;
+let scanning = false;
+let lastScanHex = '';
+let lastScanTime = 0;
+
+// --- Binary parsing helpers ---
+function readU32BE(buf, off) {
+  return (buf[off] << 24 | buf[off+1] << 16 | buf[off+2] << 8 | buf[off+3]) >>> 0;
+}
+function readU24BE(buf, off) {
+  return (buf[off] << 16 | buf[off+1] << 8 | buf[off+2]) >>> 0;
+}
+function readU8(buf, off) {
+  return buf[off];
+}
+function toHex(buf) {
+  return Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function trimNull(str) {
+  return str.replace(/\0+$/, '');
+}
+function formatTimestamp(ts) {
+  try { return new Date(ts * 1000).toISOString().replace('T', ' ').replace('.000Z', ' UTC'); }
+  catch { return ts.toString(); }
+}
+function formatAmount(n) {
+  return n.toLocaleString('fr-FR') + ' FCFA';
+}
+function sigTypeName(b) {
+  return '0x' + b.toString(16).padStart(2, '0') + ' (' + (SIG_TYPES[b] || 'unknown') + ')';
+}
+
+// --- Document parsers ---
+function parseTransfer(buf) {
+  return {
+    type: 'Transfer', cssClass: 'transfer', size: '82 bytes',
+    fields: [
+      { label: 'sender_id', value: readU32BE(buf, 0) },
+      { label: 'recipient_id', value: readU32BE(buf, 4) },
+      { label: 'amount', value: formatAmount(readU24BE(buf, 8)) },
+      { label: 'timestamp', value: formatTimestamp(readU32BE(buf, 12)) },
+      { label: 'sig_type', value: sigTypeName(readU8(buf, 16)) },
+      { label: 'key_hint', value: '0x' + toHex(buf.slice(17, 19)) },
+      { label: 'sender_sig', value: toHex(buf.slice(18, 82)) },
+    ],
+    hex: toHex(buf)
+  };
+}
+
+function parseRecipient(buf) {
+  const name = trimNull(new TextDecoder('utf-8').decode(buf.slice(4, 36)));
+  return {
+    type: 'Recipient QR', cssClass: 'recipient', size: '107 bytes',
+    fields: [
+      { label: 'recipient_id', value: readU32BE(buf, 0) },
+      { label: 'recipient_name', value: name },
+      { label: 'timestamp', value: formatTimestamp(readU32BE(buf, 36)) },
+      { label: 'sig_type', value: sigTypeName(readU8(buf, 40)) },
+      { label: 'key_hint', value: '0x' + toHex(buf.slice(41, 43)) },
+      { label: 'root_sig', value: toHex(buf.slice(43, 107)) },
+    ],
+    hex: toHex(buf)
+  };
+}
+
+function parseIdentity(buf) {
+  const keyPrefix = readU8(buf, 4);
+  const keyType = keyPrefix === 0x00 ? 'Ed25519 (0x00 padded)' :
+    keyPrefix === 0x02 || keyPrefix === 0x03 ? 'EC compressed' : 'unknown';
+  return {
+    type: 'Identity QR', cssClass: 'identity', size: '111 bytes',
+    fields: [
+      { label: 'member_id', value: readU32BE(buf, 0) },
+      { label: 'public_key', value: toHex(buf.slice(4, 37)) },
+      { label: 'key_format', value: keyType },
+      { label: 'max_amount', value: formatAmount(readU24BE(buf, 37)) },
+      { label: 'valid_to', value: formatTimestamp(readU32BE(buf, 40)) },
+      { label: 'sig_type', value: sigTypeName(readU8(buf, 44)) },
+      { label: 'key_hint', value: '0x' + toHex(buf.slice(45, 47)) },
+      { label: 'root_sig', value: toHex(buf.slice(47, 111)) },
+    ],
+    hex: toHex(buf)
+  };
+}
+
+function parseDocument(buf) {
+  if (!(buf instanceof Uint8Array)) buf = new Uint8Array(buf);
+  switch (buf.length) {
+    case 82: return parseTransfer(buf);
+    case 107: return parseRecipient(buf);
+    case 111: return parseIdentity(buf);
+    default: return {
+      type: 'Unknown Document', cssClass: 'unknown', size: buf.length + ' bytes',
+      fields: [{ label: 'length', value: buf.length + ' bytes (expected 82, 107, or 111)' }],
+      hex: toHex(buf)
+    };
+  }
+}
+
+// --- Render parsed document ---
+function renderResult(doc) {
+  const card = document.createElement('div');
+  card.className = 'card ' + doc.cssClass;
+
+  let html = '<h2>' + doc.type + ' \u2014 ' + doc.size + '</h2>';
+  for (const f of doc.fields) {
+    html += '<div class="field"><span class="label">' + f.label +
+      '</span><span class="value">' + f.value + '</span></div>';
+  }
+  html += '<div class="hex">Hex: ' + doc.hex + '</div>';
+  card.innerHTML = html;
+
+  resultDiv.prepend(card);
+}
+
+// --- Decode QR from image data using jsQR ---
+function decodeFromImageData(imageData) {
+  if (typeof jsQR === 'undefined') {
+    statusDiv.textContent = 'jsQR library not loaded. Check network connection.';
+    return null;
+  }
+  const code = jsQR(imageData.data, imageData.width, imageData.height, {
+    inversionAttempts: 'dontInvert'
+  });
+  if (code && code.binaryData && code.binaryData.length > 0) {
+    return new Uint8Array(code.binaryData);
+  }
+  return null;
+}
+
+// --- Camera scanner ---
+async function startScanner() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    video.srcObject = stream;
+    await video.play();
+
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    scanning = true;
+    statusDiv.textContent = 'Scanning... Point camera at a SWAP QR code.';
+
+    requestAnimationFrame(scanFrame);
+  } catch (e) {
+    statusDiv.innerHTML = '<span class="error">Camera error: ' + e.message +
+      '</span><br>Try the "Upload QR Image" button instead.';
+  }
+}
+
+function stopScanner() {
+  scanning = false;
+  if (stream) {
+    stream.getTracks().forEach(function(t) { t.stop(); });
+    stream = null;
+  }
+  video.srcObject = null;
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  statusDiv.textContent = '';
+}
+
+function scanFrame() {
+  if (!scanning) return;
+  if (video.readyState < 2) {
+    requestAnimationFrame(scanFrame);
+    return;
+  }
+
+  decodeCanvas.width = video.videoWidth;
+  decodeCanvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0);
+  var imageData = ctx.getImageData(0, 0, decodeCanvas.width, decodeCanvas.height);
+
+  var bytes = decodeFromImageData(imageData);
+  if (bytes) {
+    var hex = toHex(bytes);
+    var now = Date.now();
+    // Debounce: same code within 3 seconds
+    if (hex !== lastScanHex || now - lastScanTime > 3000) {
+      lastScanHex = hex;
+      lastScanTime = now;
+      var doc = parseDocument(bytes);
+      renderResult(doc);
+      if (navigator.vibrate) navigator.vibrate(100);
+      statusDiv.textContent = 'Scanned! Keep scanning or stop camera.';
+    }
+  }
+
+  requestAnimationFrame(scanFrame);
+}
+
+// --- File upload handler ---
+function handleFileUpload(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+
+  var img = new Image();
+  img.onload = function() {
+    decodeCanvas.width = img.width;
+    decodeCanvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    var imageData = ctx.getImageData(0, 0, img.width, img.height);
+
+    var bytes = decodeFromImageData(imageData);
+    if (bytes) {
+      var doc = parseDocument(bytes);
+      renderResult(doc);
+      statusDiv.textContent = 'Decoded ' + file.name;
+    } else {
+      statusDiv.innerHTML = '<span class="error">No QR code found in ' + file.name + '</span>';
+    }
+    // Reset input so same file can be re-selected
+    event.target.value = '';
+  };
+  img.src = URL.createObjectURL(file);
+}
+</script>
+
+</body>
+</html>

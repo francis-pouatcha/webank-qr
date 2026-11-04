@@ -1,0 +1,14 @@
+SWAP Sample: Recipient QR
+==================================================
+
+recipient_id        : 1001 (Alice)
+recipient_name      : Alice Nguemo
+timestamp           : 1793802909 (UTC)
+sig_type            : 0x01 (Ed25519)
+key_hint            : 0x558e (MFI Root)
+signature           : 64-byte fake Root signature
+
+──────────────────────────────────────────────────
+Total bytes: 107
+Hex dump:
+000003e9416c696365204e6775656d6f00000000000000000000000000000000000000006aeb429d01558e28d6e1efb4d3ce957cca251ef7fb6d2eeb18ea2274dbadc4f75e3647bb588dbd28d6e1efb4d3ce957cca251ef7fb6d2eeb18ea2274dbadc4f75e3647bb588dbd

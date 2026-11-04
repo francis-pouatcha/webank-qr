@@ -1,0 +1,14 @@
+SWAP Sample: Recipient QR
+==================================================
+
+recipient_id        : 2002 (Bob)
+recipient_name      : Bob's Boulangerie
+timestamp           : 1793802909 (UTC)
+sig_type            : 0x01 (Ed25519)
+key_hint            : 0x558e (MFI Root)
+signature           : 64-byte fake Root signature
+
+──────────────────────────────────────────────────
+Total bytes: 107
+Hex dump:
+000007d2426f62277320426f756c616e67657269650000000000000000000000000000006aeb429d01558e4f60971ebdd7653f5ef2b3aa6a6af1f3d2d205e1e025478459e4ace2e651f3f84f60971ebdd7653f5ef2b3aa6a6af1f3d2d205e1e025478459e4ace2e651f3f8

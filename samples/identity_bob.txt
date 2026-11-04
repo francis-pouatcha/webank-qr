@@ -1,0 +1,15 @@
+SWAP Sample: Identity QR
+==================================================
+
+member_id           : 2002 (Bob)
+public_key          : secp256k1 (33 bytes, compressed)
+max_amount          : 100000 FCFA
+valid_to            : 1796394909 (UTC)
+sig_type            : 0x03 (secp256k1)
+key_hint            : 0x558e (MFI Root)
+signature           : 64-byte fake Root signature
+
+──────────────────────────────────────────────────
+Total bytes: 111
+Hex dump:
+000007d2024dd39d2a155e0ab42ad8e477f85addc820ae059e2af5c7831124cb71da1685b50186a06b12cf9d03558e725f4522d6d090f9049c638e7625004c116fb75c4ac9bfeb2c1fe2d819bf74ab725f4522d6d090f9049c638e7625004c116fb75c4ac9bfeb2c1fe2d819bf74ab

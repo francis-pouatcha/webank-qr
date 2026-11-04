@@ -1,0 +1,15 @@
+SWAP Sample: Transfer (Payment)
+==================================================
+
+sender_id           : 1001 (Alice)
+recipient_id        : 2002 (Bob)
+amount              : 500 FCFA
+timestamp           : 1793802909 (UTC)
+sig_type            : 0x01 (Ed25519)
+key_hint            : 0xa1b4
+signature           : 64-byte fake Ed25519 signature
+
+──────────────────────────────────────────────────
+Total bytes: 82
+Hex dump:
+000003e9000007d20001f46aeb429d01a1b4be9a1afa66de826f85c790547187be9b0612289a1d1e6f208a74aed136582d80be9a1afa66de826f85c790547187be9b0612289a1d1e6f208a74aed136582d80
